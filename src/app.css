@@ -24,6 +24,11 @@ html, body, #root {
   z-index: 1;
 }
 
+/* Keep edge labels above edge paths */
+.react-flow__edgelabel-renderer {
+  z-index: 2;
+}
+
 /* React Flow node transition for auto-layout animation */
 .react-flow__node {
   transition: transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
