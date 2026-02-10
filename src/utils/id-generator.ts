@@ -31,3 +31,28 @@ export function resetCounters(): void {
   seqEventCounter = 0;
   activationCounter = 0;
 }
+
+function maxSuffix(ids: string[], prefix: string): number {
+  let max = 0;
+  for (const id of ids) {
+    if (id.startsWith(prefix)) {
+      const num = parseInt(id.slice(prefix.length), 10);
+      if (num > max) max = num;
+    }
+  }
+  return max;
+}
+
+export function syncCountersFromState(state: {
+  nodes: { id: string }[];
+  edges: { id: string }[];
+  seqParticipants: { id: string }[];
+  seqEvents: { id: string }[];
+  seqActivations: { id: string }[];
+}): void {
+  nodeCounter = maxSuffix(state.nodes.map((n) => n.id), 'node_');
+  edgeCounter = maxSuffix(state.edges.map((e) => e.id), 'edge_');
+  participantCounter = maxSuffix(state.seqParticipants.map((p) => p.id), 'participant_');
+  seqEventCounter = maxSuffix(state.seqEvents.map((e) => e.id), 'seq_event_');
+  activationCounter = maxSuffix(state.seqActivations.map((a) => a.id), 'activation_');
+}

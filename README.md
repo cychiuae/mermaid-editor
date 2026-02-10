@@ -1,73 +1,91 @@
-# React + TypeScript + Vite
+# Mermaid Editor
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A visual editor for creating [Mermaid](https://mermaid.js.org/) diagrams with real-time code generation. Build flowcharts and sequence diagrams through an interactive canvas, then export the generated Mermaid code, SVG, or PNG.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### Flowchart
 
-## React Compiler
+- **6 node shapes** — rectangle, rounded, diamond, circle, stadium, hexagon
+- **3 edge styles** — solid (`-->`), dotted (`-.->`), thick (`==>`)
+- **4 directions** — TB, LR, BT, RL
+- **Auto-layout** via Dagre algorithm
+- Inline text editing (double-click nodes/edges)
+- Multi-select and bulk delete
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Sequence Diagram
 
-## Expanding the ESLint configuration
+- **Participants** with aliases, participant/actor types
+- **10 arrow types** — solid/dotted x arrow/open/cross/async + bidirectional
+- **Notes** — left of, right of, over (single or multiple participants)
+- **7 fragment types** — loop, alt/else, opt, par/and, critical/option, break, rect
+- **Activations** — explicit activate/deactivate bars
+- **Auto-numbering** — optional sequential message numbers
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### General
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- **Undo/Redo** with full state history
+- **Import** existing Mermaid code
+- **Export** to Mermaid (.mmd), SVG, or PNG
+- **Live code panel** showing generated Mermaid syntax
+- **Persistent state** — auto-saves to localStorage
+- **Keyboard shortcuts** — Ctrl+Z undo, Ctrl+Y redo, Del delete, Esc cancel
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## Getting Started
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+**Prerequisites:** Node.js 18+
+
+```bash
+# Install dependencies
+npm install
+
+# Start dev server
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Opens at `http://localhost:5173`.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Scripts
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start dev server with HMR |
+| `npm run build` | Type-check and build for production |
+| `npm run preview` | Preview production build |
+| `npm run lint` | Run ESLint |
+
+## Tech Stack
+
+- [React 19](https://react.dev/) + TypeScript
+- [Vite](https://vite.dev/) — build tool
+- [@xyflow/react](https://reactflow.dev/) v12 — flowchart canvas
+- Custom SVG canvas — sequence diagram rendering
+- [Zustand](https://zustand.docs.pmnd.rs/) v5 — state management
+- [Dagre](https://github.com/dagrejs/dagre) — auto-layout algorithm
+- [Tailwind CSS](https://tailwindcss.com/) v4 — styling
+- [Motion](https://motion.dev/) v12 — animations
+- [Lucide](https://lucide.dev/) — icons
+
+## Architecture
+
+The app supports two diagram types, switched via a toolbar picker:
+
+- **Flowchart mode** renders an interactive React Flow canvas with draggable nodes and connectable edges.
+- **Sequence mode** renders a custom SVG canvas with pan/zoom, participants, messages, notes, and fragments.
+
+State is managed through Zustand slices (nodes, edges, graph direction, history, UI, sequence data). History captures snapshots of both diagram types for unified undo/redo.
+
+```
+src/
+├── canvas/        # React Flow flowchart canvas
+├── nodes/         # Flowchart node components (6 shapes)
+├── edges/         # Flowchart edge components (3 styles)
+├── sequence/      # Sequence diagram canvas + layout engine
+├── toolbar/       # Toolbar with diagram-specific controls
+├── properties/    # Right-panel property editors
+├── code-panel/    # Live Mermaid code viewer
+├── mermaid/       # Code generation and parsing
+├── store/         # Zustand state slices
+├── hooks/         # Keyboard shortcuts, auto-layout, import/export
+└── types/         # TypeScript type definitions
 ```

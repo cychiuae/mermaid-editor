@@ -22,7 +22,7 @@ export interface NodesSlice {
   setNodes: (nodes: FlowchartNode[]) => void;
 }
 
-export const createNodesSlice: StateCreator<AppState, [], [], NodesSlice> = (set, get) => ({
+export const createNodesSlice: StateCreator<AppState, [["zustand/persist", unknown]], [], NodesSlice> = (set, get) => ({
   nodes: [],
 
   onNodesChange: (changes) => {

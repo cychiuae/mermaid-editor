@@ -21,7 +21,7 @@ export interface EdgesSlice {
   setEdges: (edges: FlowchartEdge[]) => void;
 }
 
-export const createEdgesSlice: StateCreator<AppState, [], [], EdgesSlice> = (set, get) => ({
+export const createEdgesSlice: StateCreator<AppState, [["zustand/persist", unknown]], [], EdgesSlice> = (set, get) => ({
   edges: [],
   defaultEdgeStyle: DEFAULT_EDGE_STYLE,
 

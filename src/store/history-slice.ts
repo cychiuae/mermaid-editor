@@ -3,12 +3,18 @@ import type { AppState } from './index';
 import type { FlowchartNode } from '../types/node';
 import type { FlowchartEdge } from '../types/edge';
 import type { GraphDirection } from '../types/graph';
+import type { DiagramType, SeqParticipant, SeqEvent, SeqActivation } from '../types/sequence';
 import { HISTORY_DEBOUNCE_MS } from '../utils/constants';
 
 interface HistorySnapshot {
   nodes: FlowchartNode[];
   edges: FlowchartEdge[];
   direction: GraphDirection;
+  diagramType: DiagramType;
+  seqParticipants: SeqParticipant[];
+  seqEvents: SeqEvent[];
+  seqActivations: SeqActivation[];
+  seqAutoNumber: boolean;
 }
 
 export interface HistorySlice {
@@ -23,63 +29,73 @@ export interface HistorySlice {
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
-export const createHistorySlice: StateCreator<AppState, [], [], HistorySlice> = (set, get) => ({
+function createSnapshot(state: AppState): HistorySnapshot {
+  return {
+    nodes: JSON.parse(JSON.stringify(state.nodes)),
+    edges: JSON.parse(JSON.stringify(state.edges)),
+    direction: state.direction,
+    diagramType: state.diagramType,
+    seqParticipants: JSON.parse(JSON.stringify(state.seqParticipants)),
+    seqEvents: JSON.parse(JSON.stringify(state.seqEvents)),
+    seqActivations: JSON.parse(JSON.stringify(state.seqActivations)),
+    seqAutoNumber: state.seqAutoNumber,
+  };
+}
+
+function restoreSnapshot(snapshot: HistorySnapshot): Partial<AppState> {
+  return {
+    nodes: snapshot.nodes,
+    edges: snapshot.edges,
+    direction: snapshot.direction,
+    diagramType: snapshot.diagramType,
+    seqParticipants: snapshot.seqParticipants,
+    seqEvents: snapshot.seqEvents,
+    seqActivations: snapshot.seqActivations,
+    seqAutoNumber: snapshot.seqAutoNumber,
+  };
+}
+
+export const createHistorySlice: StateCreator<AppState, [["zustand/persist", unknown]], [], HistorySlice> = (set, get) => ({
   past: [],
   future: [],
 
   pushHistory: () => {
     if (debounceTimer) clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
-      const { nodes, edges, direction, past } = get();
-      const snapshot: HistorySnapshot = {
-        nodes: JSON.parse(JSON.stringify(nodes)),
-        edges: JSON.parse(JSON.stringify(edges)),
-        direction,
-      };
+      const state = get();
+      const snapshot = createSnapshot(state);
       set({
-        past: [...past, snapshot],
+        past: [...state.past, snapshot],
         future: [],
       });
     }, HISTORY_DEBOUNCE_MS);
   },
 
   undo: () => {
-    const { past, nodes, edges, direction } = get();
-    if (past.length === 0) return;
+    const state = get();
+    if (state.past.length === 0) return;
 
-    const previous = past[past.length - 1];
-    const current: HistorySnapshot = {
-      nodes: JSON.parse(JSON.stringify(nodes)),
-      edges: JSON.parse(JSON.stringify(edges)),
-      direction,
-    };
+    const previous = state.past[state.past.length - 1];
+    const current = createSnapshot(state);
 
     set({
-      past: past.slice(0, -1),
+      past: state.past.slice(0, -1),
       future: [current, ...get().future],
-      nodes: previous.nodes,
-      edges: previous.edges,
-      direction: previous.direction,
+      ...restoreSnapshot(previous),
     });
   },
 
   redo: () => {
-    const { future, nodes, edges, direction } = get();
-    if (future.length === 0) return;
+    const state = get();
+    if (state.future.length === 0) return;
 
-    const next = future[0];
-    const current: HistorySnapshot = {
-      nodes: JSON.parse(JSON.stringify(nodes)),
-      edges: JSON.parse(JSON.stringify(edges)),
-      direction,
-    };
+    const next = state.future[0];
+    const current = createSnapshot(state);
 
     set({
       past: [...get().past, current],
-      future: future.slice(1),
-      nodes: next.nodes,
-      edges: next.edges,
-      direction: next.direction,
+      future: state.future.slice(1),
+      ...restoreSnapshot(next),
     });
   },
 

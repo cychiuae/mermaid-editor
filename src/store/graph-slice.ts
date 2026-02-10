@@ -7,7 +7,7 @@ export interface GraphSlice {
   setDirection: (direction: GraphDirection) => void;
 }
 
-export const createGraphSlice: StateCreator<AppState, [], [], GraphSlice> = (set, get) => ({
+export const createGraphSlice: StateCreator<AppState, [["zustand/persist", unknown]], [], GraphSlice> = (set, get) => ({
   direction: 'TB',
 
   setDirection: (direction) => {

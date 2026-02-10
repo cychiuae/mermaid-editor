@@ -62,3 +62,73 @@ html, body, #root {
 .code-panel pre {
   tab-size: 2;
 }
+
+/* ── Sequence diagram styles ─────────────────────────────────────── */
+
+.sequence-canvas {
+  cursor: grab;
+}
+
+.sequence-canvas.panning {
+  cursor: grabbing;
+}
+
+/* Participant hover */
+.seq-participant:hover rect,
+.seq-participant:hover .actor-body {
+  stroke: #3b82f6;
+  stroke-width: 2;
+}
+
+/* Message hover */
+.seq-message:hover line,
+.seq-message:hover path {
+  stroke: #3b82f6;
+  stroke-width: 2;
+}
+
+/* Selection highlight */
+.seq-selected rect,
+.seq-selected line,
+.seq-selected path,
+.seq-selected polygon {
+  stroke: #3b82f6;
+  stroke-width: 2;
+}
+
+@keyframes seq-selection-pulse {
+  0%, 100% {
+    filter: drop-shadow(0 0 2px rgba(59, 130, 246, 0.5));
+  }
+  50% {
+    filter: drop-shadow(0 0 4px rgba(59, 130, 246, 0.3));
+  }
+}
+
+.seq-selected {
+  animation: seq-selection-pulse 2s ease-in-out infinite;
+}
+
+/* Note hover */
+.seq-note:hover rect {
+  stroke: #f59e0b;
+  stroke-width: 2;
+}
+
+/* Fragment hover */
+.seq-fragment:hover > rect {
+  stroke: #6b7280;
+  stroke-width: 2;
+}
+
+/* Actor stick figure */
+.actor-figure line,
+.actor-figure circle {
+  stroke: #6b7280;
+  stroke-width: 1.5;
+  fill: none;
+}
+
+.actor-figure circle {
+  fill: white;
+}
