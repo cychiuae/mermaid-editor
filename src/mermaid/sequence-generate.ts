@@ -1,4 +1,4 @@
-import type { SequenceDiagramData, SeqEvent, SeqMessage, SeqNoteEvent, SeqFragmentEvent, FragmentSection } from '../types/sequence';
+import type { SequenceDiagramData, SeqEvent, SeqMessage, SeqNoteEvent, SeqFragmentEvent } from '../types/sequence';
 import { SEQ_ARROW_SYNTAX } from '../types/sequence';
 import { sanitizeLabel } from './sanitize';
 

@@ -5,7 +5,6 @@ import type {
   SeqNoteEvent,
   SeqFragmentEvent,
   SeqActivation,
-  SeqEvent,
 } from '../../types/sequence';
 import {
   PARTICIPANT_WIDTH,
@@ -291,7 +290,7 @@ export function computeSequenceLayout(data: SequenceDiagramData): SequenceLayout
   // Step 4: Bottom participants
   const bottomY = currentY + MARGIN_BOTTOM;
 
-  participants.forEach((p, index) => {
+  participants.forEach((p) => {
     const x = participantXMap.get(p.id) ?? 0;
 
     participantLayouts.push({
