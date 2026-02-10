@@ -32,16 +32,22 @@ const SHAPE_PATTERNS: [RegExp, NodeShape][] = [
   [/^\[(.+?)\]$/, 'rectangle'],
 ];
 
-// Edge arrow patterns: ordered longest first
-const EDGE_PATTERNS: { regex: RegExp; style: EdgeStyle; hasLabel: boolean }[] = [
-  // Labeled edges
-  { regex: /^(\S+)\s+==\s*"(.+?)"\s*==>\s+(\S+)$/, style: 'thick', hasLabel: true },
-  { regex: /^(\S+)\s+-\.\s*"(.+?)"\s*\.->\s+(\S+)$/, style: 'dotted', hasLabel: true },
-  { regex: /^(\S+)\s+--\s*"(.+?)"\s*-->\s+(\S+)$/, style: 'solid', hasLabel: true },
-  // Unlabeled edges
-  { regex: /^(\S+)\s+==>\s+(\S+)$/, style: 'thick', hasLabel: false },
-  { regex: /^(\S+)\s+-\.->\s+(\S+)$/, style: 'dotted', hasLabel: false },
-  { regex: /^(\S+)\s+-->\s+(\S+)$/, style: 'solid', hasLabel: false },
+// Arrow patterns for finding edges within a line.
+// Ordered: pipe-labeled > quote-labeled > unlabeled (most specific first).
+// Capture group 1 = label text (if present).
+const ARROW_PATTERNS: { regex: RegExp; style: EdgeStyle }[] = [
+  // Pipe-labeled arrows: -->|label|, -.->|label|, ==>|label|
+  { regex: /==>\|([^|]*)\|/, style: 'thick' },
+  { regex: /-\.->\|([^|]*)\|/, style: 'dotted' },
+  { regex: /-->\|([^|]*)\|/, style: 'solid' },
+  // Quote-labeled arrows: == "label" ==>, -. "label" .->, -- "label" -->
+  { regex: /==\s*"([^"]+)"\s*==>/, style: 'thick' },
+  { regex: /-\.\s*"([^"]+)"\s*\.->/, style: 'dotted' },
+  { regex: /--\s*"([^"]+)"\s*-->/, style: 'solid' },
+  // Unlabeled arrows
+  { regex: /==>/, style: 'thick' },
+  { regex: /-.->/, style: 'dotted' },
+  { regex: /-->/, style: 'solid' },
 ];
 
 function parseNodeDef(token: string): { id: string; label: string; shape: NodeShape } | null {
@@ -64,14 +70,25 @@ function parseNodeDef(token: string): { id: string; label: string; shape: NodeSh
   return null;
 }
 
+/** Parse a token as a node definition or plain ID, registering the node if found. */
+function parseOrRegisterNode(token: string, nodeMap: Map<string, ParsedNode>): string {
+  const nodeDef = parseNodeDef(token);
+  if (nodeDef) {
+    nodeMap.set(nodeDef.id, nodeDef);
+    return nodeDef.id;
+  }
+  return token;
+}
+
 export function parseFlowchart(code: string): FlowchartParseResult {
   const lines = code.split('\n').map((l) => l.trim()).filter(Boolean);
 
-  // First line: direction
+  // First line: direction (TD is an alias for TB in Mermaid)
   let direction: GraphDirection = 'TB';
-  const headerMatch = lines[0]?.match(/^(?:flowchart|graph)\s+(TB|LR|BT|RL)\s*$/i);
+  const headerMatch = lines[0]?.match(/^(?:flowchart|graph)\s+(TB|TD|LR|BT|RL)\s*$/i);
   if (headerMatch) {
-    direction = headerMatch[1].toUpperCase() as GraphDirection;
+    const dir = headerMatch[1].toUpperCase();
+    direction = (dir === 'TD' ? 'TB' : dir) as GraphDirection;
   }
 
   const nodeMap = new Map<string, ParsedNode>();
@@ -80,30 +97,28 @@ export function parseFlowchart(code: string): FlowchartParseResult {
   for (let i = 1; i < lines.length; i++) {
     const line = lines[i];
 
-    // Try edge patterns first (they contain node refs)
+    // Try edge patterns first (supports inline node definitions like A[label] -->|text| B(label))
     let matched = false;
-    for (const { regex, style, hasLabel } of EDGE_PATTERNS) {
-      const m = line.match(regex);
+    for (const { regex, style } of ARROW_PATTERNS) {
+      const m = regex.exec(line);
       if (m) {
-        if (hasLabel) {
-          const [, source, label, target] = m;
-          edges.push({ source, target, style, label: desanitizeLabel(label) });
-          // Register implicit nodes
-          ensureNode(nodeMap, source);
-          ensureNode(nodeMap, target);
-        } else {
-          const [, source, target] = m;
-          edges.push({ source, target, style, label: '' });
-          ensureNode(nodeMap, source);
-          ensureNode(nodeMap, target);
-        }
+        const sourceToken = line.slice(0, m.index).trim();
+        const targetToken = line.slice(m.index + m[0].length).trim();
+        const label = m[1] || '';
+
+        const sourceId = parseOrRegisterNode(sourceToken, nodeMap);
+        const targetId = parseOrRegisterNode(targetToken, nodeMap);
+
+        edges.push({ source: sourceId, target: targetId, style, label: desanitizeLabel(label) });
+        ensureNode(nodeMap, sourceId);
+        ensureNode(nodeMap, targetId);
         matched = true;
         break;
       }
     }
     if (matched) continue;
 
-    // Try node definition
+    // Try standalone node definition
     const nodeDef = parseNodeDef(line);
     if (nodeDef) {
       nodeMap.set(nodeDef.id, nodeDef);
